@@ -48,8 +48,10 @@ class SampleBot(GtalkRobot):
         suffix = '@flipkart.com'
         if not user_mail_id.endswith(suffix):
             raise ValildationException("You are not part of flipkart. Im afraid you cant execute any commands!")
-        print "validated %s" % user_mail_id
-        return user_mail_id[:-len(suffix)]
+        ldap = user_mail_id[:-len(suffix)]
+        if not ldap in self.auth_data:
+            raise ValildationException("No password registered for your id. Can't execute your commands :(")
+        return ldap
 
     def validate_grammar(request):
         pass

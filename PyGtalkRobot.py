@@ -153,7 +153,11 @@ class GtalkRobot:
         #print_info(presence)
         if presence:
             print "-"*100
-            print presence.getFrom(), ",", presence.getFrom().getResource(), ",", presence.getType(), ",", presence.getStatus(), ",", presence.getShow()
+            # Adding Exception handler below dude to UnicodeEncodeError for some unstructured data.
+            try:
+                print presence.getFrom(), ",", presence.getFrom().getResource(), ",", presence.getType(), ",", presence.getStatus(), ",", presence.getShow()
+            except UnicodeEncodeError:
+                print "error for %s " % presence
             print "~"*100
             if presence.getType()=='subscribe':
                 jid = presence.getFrom().getStripped()

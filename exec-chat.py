@@ -117,13 +117,13 @@ class CommandParseAndExecutor:
         if re.match('%s.*' % REGISTER, message):         # register host machines
             host_machines = self.get_machines_for_registration_only(message)
             self.ssh_provider_pool.ssh(ldap, host_machines)
-            return "done registering ...."
+            return "done registering %s ...." % host_machines
         elif re.match('%s.*' % RUN_ONLY_ON, message):                    # run cmd on a specific set of hosts # TODO
             host_machine, command = self.get_machines_for_single_run(message)
             self.ssh_provider_pool.ssh(ldap, [host_machine])
             return self.run_cmd(ldap, [host_machine], command) # particular host
         else:
-            print "executing..."
+            print "executing... %s " % message
             return self.run_cmd(ldap, [], message) # all hosts
 
     def get_machines_for_single_run(self, message):
@@ -134,7 +134,6 @@ class CommandParseAndExecutor:
     def get_machines_for_registration_only(self, message):
         # print "message is %s " % message
         array_with_machine_str = re.split(REGISTER,message)[1:]  # ['m1 m2']
-        # print("array_with_machine_str %s" % array_with_machine_str)
         machine_list = array_with_machine_str[0].strip().split(' ') # m1, m2
         if not machine_list:
             raise ValildationException("Correct way to register machines: % m1 m2", REGISTER)

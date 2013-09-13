@@ -10,7 +10,7 @@ from configobj import ConfigObj
 from PyGtalkRobot import GtalkRobot
 from collections import defaultdict
 
-RUN_ONLY_AT = 'run_only_at'
+RUN_ONLY_ON = 'run_only_on'
 REGISTER = 'register'
 CONFIG_FILE = 'config/auth_config.ini'
 
@@ -21,6 +21,9 @@ class Common:
     def log_error(msg=''):
         print traceback.format_exc(msg + " " + traceback.format_exc())
 
+    @staticmethod
+    def get_sub_dict(dict,keys):
+        return dict((k, dict[k]) for k in keys)
 
 # Common Validation exception
 class ValildationException(Exception):
@@ -96,23 +99,33 @@ class CommandParseAndExecutor:
         # message = "hey! watsup %s? I'm a bot " % ldap
         return resp
 
+    def run_cmd(self, ldap, hosts, message):
+        user_login_dict = self.ssh_provider_pool.get_pool()
+        all_registerd_hosts = (hosts if hosts else user_login_dict[ldap].keys())
+        if not all_registerd_hosts:
+            raise ValildationException("register host(s) before running commands or use %s (m1,m2) cmd " % RUN_ONLY_ON)
+        return self.run_cmd_on_machines(ldap, user_login_dict, all_registerd_hosts, message)
+
     def validate_grammar_and_get_res(self, ldap, message):
         if re.match('%s.*' % REGISTER, message):         # register host machines
-            host_machines = self.get_machines(message)
+            host_machines = self.get_machines_for_registration_only(message)
             self.ssh_provider_pool.ssh(ldap, host_machines)
-        if re.match('%s.*' % RUN_ONLY_AT, message):                    # run cmd on a specific set of hosts # TODO
-            pass
+        if re.match('%s.*' % RUN_ONLY_ON, message):                    # run cmd on a specific set of hosts # TODO
+            host_machine, command = self.get_machines_for_single_run(message)
+            self.ssh_provider_pool.ssh(ldap, [host_machine])
+            return self.run_cmd(ldap, [host_machine], command) # particular host
         else:
-            user_login_dict = self.ssh_provider_pool.get_pool()
-            all_registerd_hosts = user_login_dict[ldap].keys()
-            if not all_registerd_hosts:
-                raise ValildationException("register host(s) before running commands or use %s (m1,m2) cmd " % RUN_ONLY_AT)
-            return self.run_cmd_on_machines(ldap, user_login_dict, all_registerd_hosts, message)
+            return self.run_cmd(ldap, [], message) # all hosts
 
-    def get_machines(self, message):
-        print "message is %s " % message
+    def get_machines_for_single_run(self, message):
+        substr = re.split(RUN_ONLY_ON, message)[1:][0]   # 'run_only_on erp-inv-app1 ls /' => 'erp-inv-app1 ls /'
+        return substr.strip().split(' ',1)    # ['erp-inv-app1', 'ls /']
+
+
+    def get_machines_for_registration_only(self, message):
+        # print "message is %s " % message
         array_with_machine_str = re.split(REGISTER,message)[1:]  # ['m1 m2']
-        print("array_with_machine_str %s" % array_with_machine_str)
+        # print("array_with_machine_str %s" % array_with_machine_str)
         machine_list = array_with_machine_str[0].strip().split(' ') # m1, m2
         if not machine_list:
             raise ValildationException("Correct way to register machines: % m1 m2", REGISTER)
@@ -141,7 +154,6 @@ class CommandExecBot(GtalkRobot):
 
     def command_100_default(self, user, message, args):
         '''.*''' # handle all messages like a boss
-        print "message insisde ", message
         self.listen_to_chat(user, message, args)
 
     def listen_to_chat(self, user, message, args):

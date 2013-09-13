@@ -144,8 +144,19 @@ class CommandParseAndExecutor:
         return res
 
 
+    def surround_with(self, str, border_strs="*" * 20):
+        pretty_resp = "%s %s %s" % (border_strs, str, border_strs)
+        return pretty_resp
+
     def prepare_response(self, result_dict):
-        return str(result_dict)
+        res = ["\n"]
+        for key,val in result_dict.items():
+            funky_key = self.surround_with(key) + "\n"
+            concat_val = ''.join(val)
+            host_resp = self.surround_with(concat_val, funky_key)
+            res.append(host_resp)
+        pretty_resp = "\n".join(res)
+        return pretty_resp
 
 # Central Facade
 class CommandExecBot(GtalkRobot):

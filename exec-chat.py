@@ -10,6 +10,8 @@ from configobj import ConfigObj
 from PyGtalkRobot import GtalkRobot
 from collections import defaultdict
 
+RESPONSE_CHAR_LIMIT = 2048
+
 RUN_ONLY_ON = 'run_only_on'
 REGISTER = 'register'
 CONFIG_FILE = 'config/auth_config.ini'
@@ -110,11 +112,13 @@ class CommandParseAndExecutor:
         if re.match('%s.*' % REGISTER, message):         # register host machines
             host_machines = self.get_machines_for_registration_only(message)
             self.ssh_provider_pool.ssh(ldap, host_machines)
-        if re.match('%s.*' % RUN_ONLY_ON, message):                    # run cmd on a specific set of hosts # TODO
+            return "done registering ...."
+        elif re.match('%s.*' % RUN_ONLY_ON, message):                    # run cmd on a specific set of hosts # TODO
             host_machine, command = self.get_machines_for_single_run(message)
             self.ssh_provider_pool.ssh(ldap, [host_machine])
             return self.run_cmd(ldap, [host_machine], command) # particular host
         else:
+            print "executing..."
             return self.run_cmd(ldap, [], message) # all hosts
 
     def get_machines_for_single_run(self, message):
@@ -148,15 +152,16 @@ class CommandParseAndExecutor:
         pretty_resp = "%s %s %s" % (border_strs, str, border_strs)
         return pretty_resp
 
-    def prepare_response(self, result_dict):
-        res = ["\n"]
-        for key,val in result_dict.items():
-            funky_key = self.surround_with(key) + "\n"
-            concat_val = ''.join(val)
-            host_resp = self.surround_with(concat_val, funky_key)
-            res.append(host_resp)
-        pretty_resp = "\n".join(res)
-        return pretty_resp
+    def prepare_response(self, result):
+        if not isinstance(result,str):
+            res = ["\n"]
+            for key,val in result.items():
+                funky_key = self.surround_with(key) + "\n"
+                concat_val = ''.join(val)
+                host_resp = self.surround_with(concat_val, funky_key)
+                res.append(host_resp)
+            return "\n".join(res)
+        return result
 
 # Central Facade
 class CommandExecBot(GtalkRobot):
@@ -171,12 +176,13 @@ class CommandExecBot(GtalkRobot):
         try:
             ldap = self.ldap_provider.get_ldap(user.getStripped())
             response = self.command_executor.execute(ldap, message.strip())
-            self.replyMessage(user, response)
+            self.replyMessage(user, response[:RESPONSE_CHAR_LIMIT])
         except (ValildationException, SSHException) as e:
             self.replyMessage(user, e.message)
         except:
             Common.log_error("Exception in listen_to_chat:")
             self.replyMessage(user, "Something went wrong")
+
 
 
 if __name__ == "__main__":

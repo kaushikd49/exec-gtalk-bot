@@ -179,6 +179,7 @@ class CommandExecBot(GtalkRobot):
     def command_100_default(self, user, message, args):
         '''.*''' # handle all messages like a boss
         self.listen_to_chat(user, message, args)
+        print("messge is %s " % message)
 
     def listen_to_chat(self, user, message, args):
         try:

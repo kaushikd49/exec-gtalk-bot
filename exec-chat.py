@@ -57,13 +57,18 @@ class SSHLoginPool:
                 self.user_login_dict[ldap][host_machine] = con
         except:
             Common.log_error("Error while trying to ssh to %s" % host_machine)
-            raise SSHException()
+            raise SSHException("Cant ssh to %s " % host_machine)
 
     def is_host_registered(self, host_machine, ldap):
         return ldap in self.user_login_dict and host_machine in self.user_login_dict[ldap]
 
     def get_pool(self):
         return self.user_login_dict
+
+    def close_all(self):
+        for (k,v) in self.user_login_dict.items():
+            for (host,conn) in v.items():
+                v.close()
 
 # Validate only certain(fk) user and provide ldap.
 class LdapProvider:
@@ -166,7 +171,11 @@ class CommandParseAndExecutor:
 # Central Facade
 class CommandExecBot(GtalkRobot):
     ldap_provider = LdapProvider()
-    command_executor = CommandParseAndExecutor(SSHLoginPool())
+
+    def __init__(self, ssh_pool):
+        GtalkRobot.__init__(self)
+        self.ssh_provider_pool = ssh_pool
+        self.command_executor = CommandParseAndExecutor(ssh_pool)
 
     def command_100_default(self, user, message, args):
         '''.*''' # handle all messages like a boss
@@ -178,6 +187,7 @@ class CommandExecBot(GtalkRobot):
             response = self.command_executor.execute(ldap, message.strip())
             self.replyMessage(user, response[:RESPONSE_CHAR_LIMIT])
         except (ValildationException, SSHException) as e:
+            print("Exception and message ", e, e.message)
             self.replyMessage(user, e.message)
         except:
             Common.log_error("Exception in listen_to_chat:")
@@ -186,6 +196,10 @@ class CommandExecBot(GtalkRobot):
 
 
 if __name__ == "__main__":
-    bot = CommandExecBot()
+    ssh_pool = SSHLoginPool()
+    bot = CommandExecBot(ssh_pool)
     bot.setState('available', "Simple Gtalk Robot")
-    bot.start("ks.kshk@gmail.com", "nomorehackkano")
+    try:
+        bot.start("ks.kshk@gmail.com", "nomorehackkano")
+    finally:
+        ssh_pool.close_all()

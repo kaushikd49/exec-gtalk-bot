@@ -72,7 +72,7 @@ class SSHLoginPool:
     def close_all(self):
         for (k,v) in self.user_login_dict.items():
             for (host,conn) in v.items():
-                v.close()
+                conn.close()
 
 # Validate only certain(fk) user and provide ldap.
 class ConfigProvider:
@@ -128,7 +128,6 @@ class CommandParseAndExecutor:
             self.ssh_provider_pool.ssh(gmail_user, [host_machine])
             return self.run_cmd(gmail_user, [host_machine], command) # particular host
         else:
-            print "executing... %s " % message
             return self.run_cmd(gmail_user, [], message) # all hosts
 
     def get_machines_for_single_run(self, message):
@@ -150,6 +149,7 @@ class CommandParseAndExecutor:
             for host in host_machines:
                 self.ssh_provider_pool.is_host_registered(host,ldap)
                 ssh_conn = user_login_dict[ldap][host]
+                print "executing command: %s " % command
                 res[host] = ssh_conn.execute(command)
         except SSHCommandExecException:
             Common.log_error("Failure while running ssh command")

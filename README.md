@@ -3,18 +3,18 @@ exec-gtalk-bot
 
 A Gtalk bot that supports running remote ssh commands.
 
+## How does it work ?
 This tool uses PyGtalkRobot to bring up an instance of GtalkBot. 
-This instace responds to certain commands, to help run remote ssh commands.
+This instace responds to certain commands, to help run remote ssh commands via pysftp.
 
-To, start using do the following :
+##Usage
 
-1. Install the following Python modules
+- Install the following Python modules
    * pysftp
    * py3dns
    * xmpppy
    * configobj 
-
-2. Update the following details in config/auth_config.ini
+- Update the following details in config/auth_config.ini
 
 gmail_bot_email_id=<gtalk-bot-email_id>
 gmail_bot_password=<gtalk-bot-password>
@@ -29,12 +29,13 @@ gmail_bot_password=<gtalk-bot-password>
 ..
 
 
-3. Add the user <gtalk-bot-email_id> and start chatting 
-
-4. Run: python exec-chat.py
+- Add the user <gtalk-bot-email_id> and start chatting 
+- Run: python exec-chat.py
 
 
 Please find some sample usage/output in the wiki
+
+
 
 
 

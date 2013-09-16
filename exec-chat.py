@@ -147,7 +147,7 @@ class CommandParseAndExecutor:
                 ssh_conn = user_login_dict[ldap][host]
                 res[host] = ssh_conn.execute(command)
         except SSHCommandExecException:
-            Common.log_error("Failure while runnign ssh command")
+            Common.log_error("Failure while running ssh command")
             raise
         return res
 
@@ -179,9 +179,9 @@ class CommandExecBot(GtalkRobot):
     def command_100_default(self, user, message, args):
         '''.*''' # handle all messages like a boss
         self.listen_to_chat(user, message, args)
-        print("messge is %s " % message)
+        print("user is %s, message is %s " % (user,message))
 
-    def listen_to_chat(self, user, message, args):
+    def listen_to_chat(self, user, message, Rargs):
         try:
             ldap = self.ldap_provider.get_ldap(user.getStripped())
             response = self.command_executor.execute(ldap, message.strip())

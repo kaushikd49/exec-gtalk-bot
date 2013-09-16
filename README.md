@@ -2,7 +2,7 @@ exec-gtalk-bot
 ==============
 
 A Gtalk bot that supports running remote ssh commands.
-This was a hack I worked on during one of the hack-nights at work.
+This was a hack I had worked on during one of the hack-nights at work.
 
 ## How does it work ?
 This tool uses PyGtalkRobot to bring up an instance of GtalkBot. 

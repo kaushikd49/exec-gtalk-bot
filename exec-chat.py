@@ -12,7 +12,7 @@ from collections import defaultdict
 
 RESPONSE_CHAR_LIMIT = 2048
 
-RUN_ONLY_ON = 'run_only_on'
+RUN_ONLY_ON = 'run_on'
 REGISTER = 'register'
 CONFIG_FILE = 'config/auth_config.ini'
 

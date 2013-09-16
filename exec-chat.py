@@ -42,19 +42,23 @@ class SSHCommandExecException(Exception):
 class SSHLoginPool:
     user_login_dict = defaultdict(dict)
 
-    def ssh(self, ldap, machines):
+    def __init__(self, config_provider):
+        self.config_provider = config_provider
+
+    def ssh(self, gmail_user, machines):
         print("machines ", machines)
         for m in machines:
-            self.login_and_update(ldap,m)
+            self.login_and_update(gmail_user,m)
         return self.user_login_dict
 
-    def login_and_update(self, ldap, host_machine):
+    def login_and_update(self, gmail_user, host_machine):
         try:
-            if not self.is_host_registered(host_machine, ldap):
+            if not self.is_host_registered(host_machine, gmail_user):
                 print("Attempting logging into %s " % host_machine)
-                con = pysftp.Connection(host_machine)
+                username, password = self.config_provider.get_ldap(gmail_user)
+                con = pysftp.Connection(host_machine, username, None, password)
                 print("Logged into %s " % host_machine)
-                self.user_login_dict[ldap][host_machine] = con
+                self.user_login_dict[gmail_user][host_machine] = con
         except:
             Common.log_error("Error while trying to ssh to %s" % host_machine)
             raise SSHException("Cant ssh to %s " % host_machine)
@@ -71,7 +75,7 @@ class SSHLoginPool:
                 v.close()
 
 # Validate only certain(fk) user and provide ldap.
-class LdapProvider:
+class ConfigProvider:
     auth_data = dict()
 
     def __init__(self):
@@ -87,8 +91,12 @@ class LdapProvider:
     def get_ldap(self, user_mail_id):
         if not user_mail_id in self.auth_data:
             raise ValildationException("No password registered for your id. Can't execute your commands :(")
-        print("returning ldap ", self.auth_data[user_mail_id])
-        return self.auth_data[user_mail_id]['username']
+        auth_details = self.auth_data[user_mail_id]
+        print("returning ldap ", auth_details)
+        return auth_details['username'],auth_details['password']
+
+    def get_bot_details(self):
+        return self.auth_data['gmail_bot_email_id'], self.auth_data['gmail_bot_password']
 
 # Parse, validate and exec commands
 # Bug - run_only_at  and register and run
@@ -97,31 +105,31 @@ class CommandParseAndExecutor:
         self.ssh_provider_pool = ssh_pool
 
     # TODO
-    def execute(self, ldap, message):
-        result = self.validate_grammar_and_get_res(ldap, message)
+    def execute(self, gmail_user, message):
+        result = self.validate_grammar_and_get_res(gmail_user, message)
         resp = self.prepare_response(result)
         # message = "hey! watsup %s? I'm a bot " % ldap
         return resp
 
-    def run_cmd(self, ldap, hosts, message):
+    def run_cmd(self, gmail_user, hosts, message):
         user_login_dict = self.ssh_provider_pool.get_pool()
-        all_registerd_hosts = (hosts if hosts else user_login_dict[ldap].keys())
+        all_registerd_hosts = (hosts if hosts else user_login_dict[gmail_user].keys())
         if not all_registerd_hosts:
             raise ValildationException("register host(s) before running commands or use %s (m1,m2) cmd " % RUN_ONLY_ON)
-        return self.run_cmd_on_machines(ldap, user_login_dict, all_registerd_hosts, message)
+        return self.run_cmd_on_machines(gmail_user, user_login_dict, all_registerd_hosts, message)
 
-    def validate_grammar_and_get_res(self, ldap, message):
+    def validate_grammar_and_get_res(self, gmail_user, message):
         if re.match('%s.*' % REGISTER, message):         # register host machines
             host_machines = self.get_machines_for_registration_only(message)
-            self.ssh_provider_pool.ssh(ldap, host_machines)
+            self.ssh_provider_pool.ssh(gmail_user, host_machines)
             return "done registering %s ...." % host_machines
         elif re.match('%s.*' % RUN_ONLY_ON, message):                    # run cmd on a specific set of hosts # TODO
             host_machine, command = self.get_machines_for_single_run(message)
-            self.ssh_provider_pool.ssh(ldap, [host_machine])
-            return self.run_cmd(ldap, [host_machine], command) # particular host
+            self.ssh_provider_pool.ssh(gmail_user, [host_machine])
+            return self.run_cmd(gmail_user, [host_machine], command) # particular host
         else:
             print "executing... %s " % message
-            return self.run_cmd(ldap, [], message) # all hosts
+            return self.run_cmd(gmail_user, [], message) # all hosts
 
     def get_machines_for_single_run(self, message):
         substr = re.split(RUN_ONLY_ON, message)[1:][0]   # 'run_only_on erp-inv-app1 ls /' => 'erp-inv-app1 ls /'
@@ -166,7 +174,6 @@ class CommandParseAndExecutor:
 
 # Orchestrator
 class CommandExecBot(GtalkRobot):
-    ldap_provider = LdapProvider()
 
     def __init__(self, ssh_pool):
         GtalkRobot.__init__(self)
@@ -180,8 +187,7 @@ class CommandExecBot(GtalkRobot):
 
     def listen_to_chat(self, user, message, Rargs):
         try:
-            ldap = self.ldap_provider.get_ldap(user.getStripped())
-            response = self.command_executor.execute(ldap, message.strip())
+            response = self.command_executor.execute(user.getStripped(), message.strip())
             self.replyMessage(user, response[:RESPONSE_CHAR_LIMIT])
         except (ValildationException, SSHException) as e:
             print("Exception and message ", e, e.message)
@@ -193,10 +199,13 @@ class CommandExecBot(GtalkRobot):
 
 
 if __name__ == "__main__":
-    ssh_pool = SSHLoginPool()
+    config_provider = ConfigProvider()
+    ssh_pool = SSHLoginPool(config_provider)
     bot = CommandExecBot(ssh_pool)
+
     bot.setState('available', "Simple Gtalk Robot")
     try:
-        bot.start("ks.kshk@gmail.com", "nomorehackkano")
+        uname, passwd = config_provider.get_bot_details()
+        bot.start(uname, passwd)
     finally:
         ssh_pool.close_all()

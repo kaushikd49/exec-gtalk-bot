@@ -6,6 +6,9 @@ import os
 import re
 import traceback
 
+lib_path = os.path.abspath('./lib')
+sys.path.append(lib_path)
+
 from configobj import ConfigObj
 from PyGtalkRobot import GtalkRobot
 from collections import defaultdict

@@ -5,11 +5,9 @@ A Gtalk bot that supports running remote ssh commands.
 This was a hack I had worked on during one of the hack-nights at work.
 
 ## How does it work ?
-This tool uses PyGtalkRobot to bring up an instance of GtalkBot. 
-This instace responds to certain commands, to help run remote ssh commands via pysftp.
+This hack uses PyGtalkRobot to bring up an instance of GtalkBot, which responds to certain commands, to help run remote ssh commands via pysftp.
 
 ## Usage
-
 - Install the following Python modules
    * pysftp
    * py3dns

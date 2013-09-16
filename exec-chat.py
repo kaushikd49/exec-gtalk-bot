@@ -76,7 +76,7 @@ class LdapProvider:
 
     def __init__(self):
         self.parse_user_auth_config() # update auth config
-        print("auth data is ", self.auth_data.keys())
+        print("auth data is ", self.auth_data)
 
     def parse_user_auth_config(self):
         config_file_path = os.path.join(os.path.dirname(__file__), CONFIG_FILE)
@@ -85,13 +85,10 @@ class LdapProvider:
         self.auth_data = conf
 
     def get_ldap(self, user_mail_id):
-        suffix = '@flipkart.com'
-        if not user_mail_id.endswith(suffix):
-            raise ValildationException("You are not part of flipkart. Im afraid you cant execute any commands!")
-        ldap = user_mail_id[:-len(suffix)]
-        if not ldap in self.auth_data:
+        if not user_mail_id in self.auth_data:
             raise ValildationException("No password registered for your id. Can't execute your commands :(")
-        return ldap
+        print("returning ldap ", self.auth_data[user_mail_id])
+        return self.auth_data[user_mail_id]['username']
 
 # Parse, validate and exec commands
 # Bug - run_only_at  and register and run
@@ -167,7 +164,7 @@ class CommandParseAndExecutor:
             return "\n".join(res)
         return result
 
-# Central Facade
+# Orchestrator
 class CommandExecBot(GtalkRobot):
     ldap_provider = LdapProvider()
 

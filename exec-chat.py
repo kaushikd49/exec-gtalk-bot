@@ -45,7 +45,7 @@ class SSHException(Exception):
 class SSHCommandExecException(Exception):
     pass
 
-# Responsible for login and maintaining state
+# Responsible for ssh login and maintaining state
 class SSHLoginPool:
     user_login_dict = defaultdict(dict)
 
@@ -81,7 +81,7 @@ class SSHLoginPool:
             for (host,conn) in v.items():
                 conn.close()
 
-# Validate only certain(fk) user and provide ldap.
+# Config for gtalk bot login and end-user remote host login details
 class ConfigProvider:
     auth_data = dict()
 
@@ -105,8 +105,7 @@ class ConfigProvider:
     def get_bot_details(self):
         return self.auth_data['gmail_bot_email_id'], self.auth_data['gmail_bot_password']
 
-# Parse, validate and exec commands
-# Bug - run_only_at  and register and run
+# Parse, validate and exec commands # TODO - maintain separate states for run_on and register.
 class CommandParseAndExecutor:
     def __init__(self, ssh_pool):
         self.ssh_provider_pool = ssh_pool

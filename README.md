@@ -17,7 +17,7 @@ This hack uses PyGtalkRobot to bring up an instance of GtalkBot, which can run r
    * gmail_bot_email_id
    * gmail_bot_password
    * username and password for ssh, as key/vals, for each gtalk user who wishes to run remote ssh commands
-3. shell> python exec-chat.py.
+3. shell> python exec-chat.py
 4. Add the Gtalk bot (gtalk-bot-email_id) to your Gtalk account and start chatting. 
 
 ## Sample output in wiki

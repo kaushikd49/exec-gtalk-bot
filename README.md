@@ -16,8 +16,8 @@ This hack uses PyGtalkRobot to bring up an instance of GtalkBot, which can run r
 2. Update the following details in config/auth_config.ini
    * gmail_bot_email_id
    * gmail_bot_password
-   * ssh username and password for each gtalk user
-3. python exec-chat.py.
-4. Add the user <gtalk-bot-email_id> and start chatting. 
+   * username and password for ssh, as key/vals, for each gtalk user who wishes to run remote ssh commands
+3. shell> python exec-chat.py.
+4. Add the Gtalk bot (gtalk-bot-email_id) to your Gtalk account and start chatting. 
 
 ## Sample output in wiki
